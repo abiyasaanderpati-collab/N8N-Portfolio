@@ -1,0 +1,1001 @@
+{
+  "name": "Invoice Reminder Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "inputDataFieldName": "attachment_0",
+        "name": "=invoice from {{ $json.from.value[0].address }}",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "1tzhs9lzeRch4rs77HR_1kKJDpPCzCGJ3",
+          "mode": "list",
+          "cachedResultName": "Incoming Invoice",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1tzhs9lzeRch4rs77HR_1kKJDpPCzCGJ3"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        576,
+        16
+      ],
+      "id": "750faaef-24f3-4405-8a2a-3b30cff370e3",
+      "name": "Upload file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "Um1VldEJ2ypWk4zT",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mistralAi",
+      "typeVersion": 1,
+      "position": [
+        752,
+        256
+      ],
+      "id": "3f566cd8-f99f-4600-a057-400ed3f84acf",
+      "name": "Extract text",
+      "credentials": {
+        "mistralCloudApi": {
+          "id": "yqsQAhvZgt5FGf5G",
+          "name": "Mistral Cloud account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "=Create a Google Calendar all-day event with the following:\n\n- Title/Summary: \"Invoice Due Tomorrow – [vendor_name] – [currency][amount]\"\n- Date: due_date MINUS 1 day\n- Description: \"Invoice #[invoice_number] from [vendor_name] is due tomorrow on [due_date].\"\n- Calendar: Primary\n- Event type: All-day\n\nAlways subtract exactly 1 day from due_date for the event date.",
+        "calendar": {
+          "__rl": true,
+          "value": "abiyasaanderpati@gmail.com",
+          "mode": "list",
+          "cachedResultName": "abiyasaanderpati@gmail.com"
+        },
+        "start": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Start', ``, 'string') }}",
+        "end": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('End', ``, 'string') }}",
+        "useDefaultReminders": false,
+        "additionalFields": {
+          "allday": "yes",
+          "description": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Description', ``, 'string') }}",
+          "summary": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Summary', ``, 'string') }}"
+        },
+        "remindersUi": {
+          "remindersValues": [
+            {
+              "method": "email",
+              "minutes": 1
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        64,
+        944
+      ],
+      "id": "44e676a5-b744-4f6b-8593-b404d7d70db0",
+      "name": "Google Calendar",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "KM4wcDeBBknlkFhz",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "=Append one row to the invoice tracking Google Sheet.\n\nColumn order (strict):\nInvoice # | Vendor | Amount | Currency | Issue Date | Due Date | Description | Status\n\nRules:\n- Dates in YYYY-MM-DD format\n- Amount as number only (no currency symbol in this column)\n- Currency in its own column (e.g. USD, IDR, EUR)\n- Status default: \"Unpaid\"\n- Append only — never overwrite or add headers",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1DAlVsVoqoSmc9TpcLV26HwY9AcD4FQZS156DhZHyDss",
+          "mode": "list",
+          "cachedResultName": "Invoice data N8N workflow",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1DAlVsVoqoSmc9TpcLV26HwY9AcD4FQZS156DhZHyDss/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1DAlVsVoqoSmc9TpcLV26HwY9AcD4FQZS156DhZHyDss/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Invoice #": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Invoice__', ``, 'string') }}",
+            "Vendor": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Vendor', ``, 'string') }}",
+            "Amount": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Amount', ``, 'string') }}",
+            "Currency": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Currency', ``, 'string') }}",
+            "Issue Date": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Issue_Date', ``, 'string') }}",
+            "Due Date": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Due_Date', ``, 'string') }}",
+            "Description": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Description', ``, 'string') }}",
+            "Status": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Status', ``, 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Invoice #",
+              "displayName": "Invoice #",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Vendor",
+              "displayName": "Vendor",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Amount",
+              "displayName": "Amount",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Currency",
+              "displayName": "Currency",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Issue Date",
+              "displayName": "Issue Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Due Date",
+              "displayName": "Due Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Description",
+              "displayName": "Description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        192,
+        944
+      ],
+      "id": "eef92cdd-fe89-41e0-8662-53ac69734021",
+      "name": "Google Sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "1xEMG2SmmuWqf9R9",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentType": "image_url",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mistralAi",
+      "typeVersion": 1,
+      "position": [
+        192,
+        464
+      ],
+      "id": "25bd9042-4f2c-43f9-abae-b8f1b23d1d66",
+      "name": "Extract text1",
+      "credentials": {
+        "mistralCloudApi": {
+          "id": "yqsQAhvZgt5FGf5G",
+          "name": "Mistral Cloud account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "inputText": "=Subject : {{ $json.subject }}\nBody : {{ $json.text }}",
+        "categories": {
+          "categories": [
+            {
+              "category": "Invoice",
+              "description": "An **invoice email** is an email sent to request payment for goods or services provided.  It usually includes:  * The invoice document (attached or linked) * The amount due * The payment deadline * Payment instructions  Purpose: to formally inform the recipient that they owe money and how to pay it."
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.textClassifier",
+      "typeVersion": 1.1,
+      "position": [
+        224,
+        16
+      ],
+      "id": "6ff542ae-1934-4267-9929-dd25aed922a9",
+      "name": "is invoice email ?"
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "simple": false,
+        "filters": {
+          "includeSpamTrash": true
+        },
+        "options": {
+          "downloadAttachments": true
+        }
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        16
+      ],
+      "id": "a6212f72-b792-4366-ab6c-eea4c8afc756",
+      "name": "incoming email",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "zXHKDdbtbTxEDHnR",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.mimeType }}",
+                    "rightValue": "application/pdf",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "5694b96a-9fcf-43c0-9409-bd98b22fcff7"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "PDF File"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "49690d50-d5af-45c8-b526-a258a1725996",
+                    "leftValue": "={{ $json.mimeType }}",
+                    "rightValue": "image/jpeg",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "JPEG File"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        800,
+        16
+      ],
+      "id": "14611839-d7e1-4cfb-8901-dd8ebdb344b8",
+      "name": "file type ?"
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        0,
+        256
+      ],
+      "id": "e06c039c-c212-44f5-8140-fd09d465f8a5",
+      "name": "get file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "Um1VldEJ2ypWk4zT",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        0,
+        464
+      ],
+      "id": "cb18aba2-bd98-404b-bc27-7e622dd6210a",
+      "name": "get file1",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "Um1VldEJ2ypWk4zT",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        192,
+        256
+      ],
+      "id": "e14247be-e5b4-45cd-84a3-5ba29818edfc",
+      "name": "Extract the text"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "7ddf362b-d2a2-499c-9f29-8179893f5b62",
+              "leftValue": "={{ $json.text }}",
+              "rightValue": "=",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        384,
+        256
+      ],
+      "id": "9c23394c-df81-47ff-864c-d0d00b66346a",
+      "name": "Flatted PDF ?"
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $('file type ?').item.json.id }}",
+          "mode": "id"
+        },
+        "options": {
+          "binaryPropertyName": "data"
+        }
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        576,
+        256
+      ],
+      "id": "55a05c37-008f-4def-b3ec-643b1482091d",
+      "name": "get file2",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "Um1VldEJ2ypWk4zT",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "a5701ebb-ef69-42bb-80f4-7879551f0cd9",
+              "leftValue": "={{ $json.pages[0].markdown }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        384,
+        464
+      ],
+      "id": "0fd51984-d379-4b0c-8096-2f926c2d1f5d",
+      "name": "still empty ?"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "a5701ebb-ef69-42bb-80f4-7879551f0cd9",
+              "leftValue": "={{ $json.pages[0].markdown }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        928,
+        256
+      ],
+      "id": "db6d269f-7776-4d29-866b-c6b6531c5a47",
+      "name": "still empty ?1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "45e8e293-bf39-4bb0-bf3b-0b041f77cfb4",
+              "name": "text",
+              "value": "={{ $json.text }}{{ $json.pages[0].markdown }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        864,
+        480
+      ],
+      "id": "0d9633ce-049e-48b8-9e0c-cc81c182f8eb",
+      "name": "standardize data"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=The invoice text : \n {{ $json.text }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=You are an invoice processing agent. Your job is to process incoming invoice data accurately and efficiently.\n\n---\n\nSTEP 1 — EXTRACT\nExtract these fields from the input:\n- invoice_number\n- vendor_name\n- amount (number only)\n- currency\n- issue_date (YYYY-MM-DD)\n- due_date (YYYY-MM-DD)\n- description (brief, max 1 sentence)\n- status (default: \"Unpaid\")\n- summary (2–3 sentence human-readable summary of the invoice)\n\nIf any field is missing, set it to \"N/A\".\n\n---\n\nSTEP 2 — USE YOUR TOOLS (run both, in order)\n\nTool 1 — Google Sheet:\nAppend a new row with all extracted fields in this column order:\nInvoice # | Vendor | Amount | Currency | Issue Date | Due Date | Description | Status\n\nTool 2 — Google Calendar:\nCreate an all-day reminder event 1 day BEFORE the due date.\n- Title: \"Invoice Due Tomorrow – [vendor_name] – [currency][amount]\"\n- Date: due_date minus 1 day\n- Description: \"Invoice #[invoice_number] from [vendor_name] is due tomorrow on [due_date].\"\n\n---\n\nSTEP 3 — RETURN OUTPUT\nAfter both tools succeed, return your response as valid JSON only.\nNo explanation. No extra text. Follow the output format exactly.\n\n---\n\nRULES:\n- Always run Tool 1 and Tool 2 before returning output\n- Never skip a tool\n- Never ask follow-up questions\n- Always return valid JSON as your final response"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        64,
+        720
+      ],
+      "id": "4aa4f623-0ccb-430a-8c56-cf97d7df9ee0",
+      "name": "Accountant & Reminder Agent"
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0AFNQYS7KK",
+          "mode": "list",
+          "cachedResultName": "invoice-info"
+        },
+        "text": "=━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n📌 *INVOICE PAYMENT REMINDER*\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nHello Team,\n\nThis is an automated reminder that the following invoice is due *tomorrow*. Please ensure payment is processed on time.\n\n---\n\n🧾 *Invoice Details*\n\n- *Invoice No.* : {{ $json.output.invoice_number }}\n- *Vendor*          : {{ $json.output.vendor_name }}\n- *Amount*         : {{ $json.output.currency }} {{ $json.output.amount }}\n- *Issued*            : {{ $json.output.issue_date }}\n- *Due Date*       : {{ $json.output.due_date }}\n- *Description*   : {{ $json.output.description }}\n- *Status*            : {{ $json.output.status }}\n\n---\n\n📝 *Summary*\n{{ $json.output.summary }}\n\n---\n\n⚠️ *Action Required*\nPlease confirm payment or notify the finance team if further review is needed before the due date.\n\nThank you.\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n🤖 Invoice Monitoring System\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
+        "otherOptions": {
+          "includeLinkToWorkflow": false,
+          "mrkdwn": true
+        }
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        528,
+        720
+      ],
+      "id": "877bb26c-d801-49be-b85d-b02d6f2531a0",
+      "name": "notify & remind the team",
+      "webhookId": "66182465-5773-4d3b-af33-46c86eb09feb",
+      "credentials": {
+        "slackApi": {
+          "id": "BW0fXrFTw797g71Q",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"summary\": \"Brief 2–3 sentence human-readable summary of the invoice.\",\n  \"invoice_number\": \"INV-0001\",\n  \"vendor_name\": \"Vendor Name\",\n  \"amount\": \"5000\",\n  \"currency\": \"USD\",\n  \"issue_date\": \"2025-01-01\",\n  \"due_date\": \"2025-01-31\",\n  \"description\": \"Brief description of goods or services.\",\n  \"status\": \"Unpaid\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        320,
+        944
+      ],
+      "id": "5b909af1-1103-4aa6-927b-ea534b3720a5",
+      "name": "output"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        -64,
+        944
+      ],
+      "id": "32cb2930-43be-49ab-a6a8-8e87c027593c",
+      "name": "Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "jul41jxGXDMCVZqH",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "google/gemini-2.5-flash-lite",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        368,
+        -112
+      ],
+      "id": "0d06b82d-12dc-4e29-9b23-93900b972e6a",
+      "name": "OpenRouter",
+      "credentials": {
+        "openRouterApi": {
+          "id": "jul41jxGXDMCVZqH",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1184,
+        272
+      ],
+      "id": "2e7b4c6f-c7a0-495c-973f-68b3a8dd09d0",
+      "name": "No Operation"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        624,
+        528
+      ],
+      "id": "5a05319e-6cf7-4691-9cfd-4479d652feeb",
+      "name": "No Operation1"
+    },
+    {
+      "parameters": {
+        "content": "🛠️ Built by Anderpati Abiyasa\n© 2026 — Open to use, remix, and share freely.\nPlease credit Anderpati Abiyasa if you share or publish this workflow.\nNo permission needed — just a mention goes a long way. 🙌\n\n## 🧾 Invoice Reminder Workflow\n\n**What this workflow does:**\n- Triggers on incoming Gmail emails\n- AI checks if the email is an invoice\n- Uploads the attachment to Google Drive\n- Detects file type (PDF or image)\n- Extracts text from the file (with fallback for flattened/scanned PDFs)\n- Standardizes the extracted invoice data\n- **Accountant & Reminder Agent** processes the invoice:\n  - Logs it to Google Sheets\n  - Creates a Google Calendar reminder\n- Notifies the team on Slack\n\n---\n\n**Services used:** Gmail · Google Drive · Google Sheets · Google Calendar · Slack · OpenRouter · Mistral AI\n\n---\n\n📄 **Full setup guide & configuration details:**\n👉 https://docs.google.com/document/d/1-_GaE8fALm2DoMvb4xLfFMMOTP1Dn7zSKO88Yviq21Q/edit?usp=sharing",
+        "height": 704,
+        "width": 560,
+        "color": 5
+      },
+      "id": "bacc7a64-df93-4431-8c4e-1c647cfe92eb",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1040,
+        496
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Upload file": {
+      "main": [
+        [
+          {
+            "node": "file type ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract text": {
+      "main": [
+        [
+          {
+            "node": "still empty ?1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Calendar": {
+      "ai_tool": [
+        [
+          {
+            "node": "Accountant & Reminder Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheet": {
+      "ai_tool": [
+        [
+          {
+            "node": "Accountant & Reminder Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract text1": {
+      "main": [
+        [
+          {
+            "node": "still empty ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "is invoice email ?": {
+      "main": [
+        [
+          {
+            "node": "Upload file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "incoming email": {
+      "main": [
+        [
+          {
+            "node": "is invoice email ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "file type ?": {
+      "main": [
+        [
+          {
+            "node": "get file",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "get file1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get file": {
+      "main": [
+        [
+          {
+            "node": "Extract the text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get file1": {
+      "main": [
+        [
+          {
+            "node": "Extract text1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract the text": {
+      "main": [
+        [
+          {
+            "node": "Flatted PDF ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Flatted PDF ?": {
+      "main": [
+        [
+          {
+            "node": "get file2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "standardize data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get file2": {
+      "main": [
+        [
+          {
+            "node": "Extract text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "still empty ?": {
+      "main": [
+        [
+          {
+            "node": "No Operation1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "standardize data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "still empty ?1": {
+      "main": [
+        [
+          {
+            "node": "No Operation",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "standardize data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "standardize data": {
+      "main": [
+        [
+          {
+            "node": "Accountant & Reminder Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Accountant & Reminder Agent": {
+      "main": [
+        [
+          {
+            "node": "notify & remind the team",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "output": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Accountant & Reminder Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Accountant & Reminder Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "is invoice email ?",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "No Operation": {
+      "main": [
+        []
+      ]
+    },
+    "No Operation1": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "2095a14b-7afb-40e6-9f48-dd953e2c0c0f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "78635082a08c3d51b3528d1dfe241d70c1cc068ff756402dbb4175a615ab167c"
+  },
+  "id": "XlNI8mUDxqEAZaSPbANlr",
+  "tags": []
+}

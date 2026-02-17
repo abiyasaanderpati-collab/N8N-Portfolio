@@ -1,0 +1,1109 @@
+{
+  "name": "Gmail Ai inbox Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "resource": "draft",
+        "subject": "={{ $('Summarize & Response Suggestion').item.json.output.suggested_reply.subject }}",
+        "message": "={{ $('Summarize & Response Suggestion').item.json.output.suggested_reply.body }}",
+        "options": {
+          "sendTo": "={{ $('Classify agent').item.json.from.value[0].address }}"
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1424,
+        -576
+      ],
+      "id": "87a235d0-df41-40f2-b863-cdff7baa5047",
+      "name": "Create a draft",
+      "webhookId": "8badd559-b0a1-4063-8c42-86f089933403",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "zXHKDdbtbTxEDHnR",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "draft",
+        "subject": "={{ $('Summarize & Response Suggestion1').item.json.output.suggested_reply.subject }}",
+        "message": "={{ $('Summarize & Response Suggestion1').item.json.output.suggested_reply.body }}",
+        "options": {
+          "sendTo": "={{ $('Classify agent').item.json.from.value[0].address }}"
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1424,
+        -400
+      ],
+      "id": "57618a79-44a4-44ee-8667-178203ea7bb6",
+      "name": "Create a draft1",
+      "webhookId": "8badd559-b0a1-4063-8c42-86f089933403",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "zXHKDdbtbTxEDHnR",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"main_purpose\": \"string\",\n  \"key_points\": [\n    \"string\"\n  ],\n  \"action_required\": [\n    \"string\"\n  ],\n  \"deadline\": \"string (use 'Not specified' if none)\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1136,
+        -80
+      ],
+      "id": "f3cbb859-f102-4b2b-a827-b845c2337734",
+      "name": "output1"
+    },
+    {
+      "parameters": {
+        "inputText": "={{ $json.text }}",
+        "categories": {
+          "categories": [
+            {
+              "category": "Revenue",
+              "description": "Direct money-related email. Examples: brand deal, sponsorship, paid collaboration, client inquiry, high-value purchase issue."
+            },
+            {
+              "category": "Lead",
+              "description": "Potential revenue, not immediate payment. Examples: podcast invite, speaking event, media interview, creator collaboration, investor proposal."
+            },
+            {
+              "category": "Operation",
+              "description": "nternal or system-related. Examples: team coordination, vendor communication, tool subscription, platform notification (YouTube, Stripe, Gumroad)."
+            },
+            {
+              "category": "Customer Support",
+              "description": "Customer/audience problems. Examples: refund request, login issue, access problem, complaint."
+            },
+            {
+              "category": "Admin",
+              "description": "Formal/legal/financial documents. Examples: contract, NDA, invoice, tax documents."
+            },
+            {
+              "category": "Community",
+              "description": "Audience relationship. Examples: testimonial, feedback, fan email, appreciation."
+            },
+            {
+              "category": "Spam",
+              "description": "Irrelevant cold pitch, mass outreach, scam, low-value email."
+            }
+          ]
+        },
+        "options": {
+          "systemPromptTemplate": "=ROLE:\nYou are an email classifier.\n\nTASK:\nClassify the incoming email into exactly ONE category.\n\nRULES:\n1. If ambiguous, prioritize by urgency:\nRevenue > Lead > Admin > Customer Support > Operations > Community > Spam\n2. Choose ONLY ONE category.\n3. Don't explain, and only output the json."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.textClassifier",
+      "typeVersion": 1.1,
+      "position": [
+        80,
+        -128
+      ],
+      "id": "308b5213-4637-4ead-a161-458d40b68afd",
+      "name": "Classify agent"
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $json.id }}",
+        "labelIds": [
+          "Label_7366014286927621607"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        640,
+        -576
+      ],
+      "id": "443ac764-033b-4e33-8210-7a6527953651",
+      "name": "labeling",
+      "webhookId": "ca894970-3b2a-4931-981d-35321b974315",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "zXHKDdbtbTxEDHnR",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Classify agent').item.json.text }}",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=# EMAIL SUMMARIZER & REPLY GENERATOR\n\n## Role\nYou are a professional email assistant.\n\n## Task\n1) Summarize the email.\n2) Generate a professional reply including:\n   - Suggested subject line\n   - Email body\n\n## Rules\n- Max 5 bullet points in summary.\n- Extract only: intent, requests, deadlines, required actions.\n- Keep reply concise and professional.\n- Generate a clear, relevant subject line.\n- Do not add information not present in the email.\n- No explanations.\n\n## Output Format (Strict JSON)\n\n{\n  \"summary\": [\n    \"Point 1\",\n    \"Point 2\"\n  ],\n  \"suggested_reply\": {\n    \"subject\": \"Professional subject line\",\n    \"body\": \"Professional email body text here.\"\n  }\n}\n\n## Example\n\nInput:\n\"Please send the contract by Monday and confirm receipt.\"\n\nOutput:\n\n{\n  \"summary\": [\n    \"Request to send contract\",\n    \"Deadline Monday\",\n    \"Confirmation required\"\n  ],\n  \"suggested_reply\": {\n    \"subject\": \"Contract Submission by Monday\",\n    \"body\": \"Thank you for your message. The contract will be sent by Monday. I will confirm once delivered.\"\n  }\n}\n"
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        864,
+        -576
+      ],
+      "id": "d1501188-42fe-44ae-8629-f278ca251b1e",
+      "name": "Summarize & Response Suggestion"
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0AEZD7H3L3",
+          "mode": "list",
+          "cachedResultName": "revenue-inbox"
+        },
+        "text": "=Hi Team,\n\nPlease review the following inbox item under the category: *Revenue*\n\n*Sender*: {{ $('Classify agent').item.json.from.value[0].address }}\n\n*Email Subject*: {{ $('Classify agent').item.json.headers.subject }}\n\n*Summary*: \n{{ $json.output.summary[0] }}\n{{ $json.output.summary[1] }}\n{{ $json.output.summary[2] }}\n{{ $json.output.summary[3] }}\n{{ $json.output.summary[4] }}\n{{ $json.output.summary[5] }}\n{{ $json.output.summary[6] }}\n\n*Kindly prioritize accordingly and update the status once handled.*",
+        "otherOptions": {
+          "includeLinkToWorkflow": false,
+          "mrkdwn": true
+        }
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        1216,
+        -576
+      ],
+      "id": "fceadadc-c661-4f6c-98d0-44abf3c76fa6",
+      "name": "Notify the team",
+      "webhookId": "4b195ba6-12c8-4356-b33d-820f9ace6238",
+      "credentials": {
+        "slackApi": {
+          "id": "BW0fXrFTw797g71Q",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Classify agent').item.json.from.value[0].address }}",
+        "subject": "=Thank you for your message",
+        "emailType": "text",
+        "message": "=Hi {{ $('Classify agent').item.json.from.value[0].name.charAt(0).toUpperCase() + $('Classify agent').item.json.from.value[0].name.slice(1) }},\n\nThank you for your message. Our team is currently reviewing your request and will reach out to you shortly with further details. We appreciate your patience.\n\nBest regards, [Your Name]",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1856,
+        -576
+      ],
+      "id": "7c51fe6e-d266-45a8-bd4c-7b9c6c4456af",
+      "name": "reply the sender",
+      "webhookId": "56024c8c-3e57-435c-9645-0591dc1defdb",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "zXHKDdbtbTxEDHnR",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $json.id }}",
+        "labelIds": [
+          "Label_7237949148230439402"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        640,
+        -400
+      ],
+      "id": "f16f923c-21fd-4845-9ad9-a264cd028cde",
+      "name": "labeling1",
+      "webhookId": "ca894970-3b2a-4931-981d-35321b974315",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "zXHKDdbtbTxEDHnR",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Classify agent').item.json.text }}",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=# EMAIL SUMMARIZER & REPLY GENERATOR\n\n## Role\nYou are a professional email assistant.\n\n## Task\n1) Summarize the email.\n2) Generate a professional reply including:\n   - Suggested subject line\n   - Email body\n\n## Rules\n- Max 5 bullet points in summary.\n- Extract only: intent, requests, deadlines, required actions.\n- Keep reply concise and professional.\n- Generate a clear, relevant subject line.\n- Do not add information not present in the email.\n- No explanations.\n\n## Output Format (Strict JSON)\n\n{\n  \"summary\": [\n    \"Point 1\",\n    \"Point 2\"\n  ],\n  \"suggested_reply\": {\n    \"subject\": \"Professional subject line\",\n    \"body\": \"Professional email body text here.\"\n  }\n}\n\n## Example\n\nInput:\n\"Please send the contract by Monday and confirm receipt.\"\n\nOutput:\n\n{\n  \"summary\": [\n    \"Request to send contract\",\n    \"Deadline Monday\",\n    \"Confirmation required\"\n  ],\n  \"suggested_reply\": {\n    \"subject\": \"Contract Submission by Monday\",\n    \"body\": \"Thank you for your message. The contract will be sent by Monday. I will confirm once delivered.\"\n  }\n}\n"
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        864,
+        -400
+      ],
+      "id": "613f07a6-0828-4e49-a91a-d151d846b030",
+      "name": "Summarize & Response Suggestion1"
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0AF5QU0550",
+          "mode": "list",
+          "cachedResultName": "lead"
+        },
+        "text": "=Hi Team,\n\nPlease review the following inbox item under the category: *Lead*\n\n*Sender*: {{ $('Classify agent').item.json.from.value[0].address }}\n\n*Email Subject*: {{ $('Classify agent').item.json.headers.subject }}\n\n*Summary*: \n{{ $json.output.summary[0] }}\n{{ $json.output.summary[1] }}\n{{ $json.output.summary[2] }}\n{{ $json.output.summary[3] }}\n{{ $json.output.summary[4] }}\n{{ $json.output.summary[5] }}\n{{ $json.output.summary[6] }}\n\n*Kindly prioritize accordingly and update the status once handled.*",
+        "otherOptions": {
+          "includeLinkToWorkflow": false,
+          "mrkdwn": true
+        }
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        1216,
+        -400
+      ],
+      "id": "9b780d52-f12d-4fc7-a897-c71577208fe1",
+      "name": "Notify the team1",
+      "webhookId": "4b195ba6-12c8-4356-b33d-820f9ace6238",
+      "credentials": {
+        "slackApi": {
+          "id": "BW0fXrFTw797g71Q",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Classify agent').item.json.from.value[0].address }}",
+        "subject": "=Thank you for your message",
+        "emailType": "text",
+        "message": "=Hi {{ $('Classify agent').item.json.from.value[0].name.charAt(0).toUpperCase() + $('Classify agent').item.json.from.value[0].name.slice(1) }},\n\nThank you for your message. Our team is currently reviewing your request and will reach out to you shortly with further details. We appreciate your patience.\n\nBest regards, [Your Name]",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1856,
+        -400
+      ],
+      "id": "3273f4a7-7f25-40ed-9522-97fbe8d4b880",
+      "name": "response the sender",
+      "webhookId": "56024c8c-3e57-435c-9645-0591dc1defdb",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "zXHKDdbtbTxEDHnR",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0AF2C4DDNH",
+          "mode": "list",
+          "cachedResultName": "operation"
+        },
+        "text": "=Hi Team,\n\nPlease review the following inbox item under the category: *Operation*\n\n*Sender*: {{ $('Classify agent').item.json.from.value[0].address }}\n\n*Email Subject*: {{ $('Classify agent').item.json.headers.subject }}\n\n*Summary*: \n-*Main Purpose* :\n{{ $json.output['Main Purpose'].map(item => `- ${item}`).join('\\n') }}\n\n-*Key Points* :\n{{ $json.output['Key Points'].map(item => `- ${item}`).join('\\n') }}\n\n-*Action Required* :\n{{ $json.output['Action Required'].map(item => `- ${item}`).join('\\n') }}\n\n-*Deadline* :\n{{ $json.output['Deadline'].map(item => `- ${item}`).join('\\n') }}\n\n\n*Kindly prioritize accordingly and update the status once handled.*",
+        "otherOptions": {
+          "includeLinkToWorkflow": false,
+          "mrkdwn": true
+        }
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        1216,
+        -208
+      ],
+      "id": "7f0be9ee-c9f2-4219-b5aa-d63487464468",
+      "name": "Notify the team2",
+      "webhookId": "4b195ba6-12c8-4356-b33d-820f9ace6238",
+      "credentials": {
+        "slackApi": {
+          "id": "BW0fXrFTw797g71Q",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $json.id }}",
+        "labelIds": [
+          "Label_7224959513538373103"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        640,
+        -208
+      ],
+      "id": "92f614b7-2462-42ad-8323-5e47e9e0f8f2",
+      "name": "labeling2",
+      "webhookId": "ca894970-3b2a-4931-981d-35321b974315",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "zXHKDdbtbTxEDHnR",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $json.id }}",
+        "labelIds": [
+          "Label_7224959513538373103"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        640,
+        0
+      ],
+      "id": "ca0ea510-89d6-4e54-a774-ac3d183d1bab",
+      "name": "labeling3",
+      "webhookId": "ca894970-3b2a-4931-981d-35321b974315",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "zXHKDdbtbTxEDHnR",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $json.id }}",
+        "labelIds": [
+          "Label_7528878519337912695"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        640,
+        192
+      ],
+      "id": "b20d1e05-e756-407b-b306-a6796056ec9c",
+      "name": "labeling4",
+      "webhookId": "ca894970-3b2a-4931-981d-35321b974315",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "zXHKDdbtbTxEDHnR",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $json.id }}",
+        "labelIds": [
+          "Label_3129711463014365935"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        640,
+        400
+      ],
+      "id": "1bc87291-fd2b-4b33-b17d-bcee17b36340",
+      "name": "labeling5",
+      "webhookId": "ca894970-3b2a-4931-981d-35321b974315",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "zXHKDdbtbTxEDHnR",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Classify agent').item.json.text }}",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=ROLE:\nYou are an email summarization engine.\n\nOBJECTIVE:\nSummarize the email into essential information only.\n\nINSTRUCTIONS:\n- Be concise.\n- No repetition.\n- No assumptions.\n- Bullet points only.\n- Max 80 words.\n\nOUTPUT FORMAT:\n\nMain Purpose:\n- \n\nKey Points:\n- \n\nAction Required:\n- \n\nDeadline:\n- (Write \"Not specified\" if none)"
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        864,
+        0
+      ],
+      "id": "cdfd4ad1-4ec2-40ae-ab9a-70d4f3dff0ff",
+      "name": "summarize"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Classify agent').item.json.text }}",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=ROLE:\nYou are an email summarization engine.\n\nOBJECTIVE:\nSummarize the email into essential information only.\n\nINSTRUCTIONS:\n- Be concise.\n- No repetition.\n- No assumptions.\n- Bullet points only.\n- Max 80 words.\n\nOUTPUT FORMAT:\n\nMain Purpose:\n- \n\nKey Points:\n- \n\nAction Required:\n- \n\nDeadline:\n- (Write \"Not specified\" if none)"
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        864,
+        192
+      ],
+      "id": "a39c2bd6-af8d-46cc-b80a-4c90a8632215",
+      "name": "summarize1"
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0AFK490LTB",
+          "mode": "list",
+          "cachedResultName": "admin-legal"
+        },
+        "text": "=Hi Team,\n\nPlease review the following inbox item under the category: *Admin / legal*\n\n*Sender*: {{ $('Classify agent').item.json.from.value[0].address }}\n\n*Email Subject*: {{ $('Classify agent').item.json.headers.subject }}\n\n*Summary*: \n-*Main Purpose* :\n{{ $json.output['Main Purpose'].map(item => `- ${item}`).join('\\n') }}\n\n-*Key Points* :\n{{ $json.output['Key Points'].map(item => `- ${item}`).join('\\n') }}\n\n-*Action Required* :\n{{ $json.output['Action Required'].map(item => `- ${item}`).join('\\n') }}\n\n-*Deadline* :\n{{ $json.output['Deadline'].map(item => `- ${item}`).join('\\n') }}\n\n\n*Kindly prioritize accordingly and update the status once handled.*",
+        "otherOptions": {
+          "includeLinkToWorkflow": false,
+          "mrkdwn": true
+        }
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        1216,
+        192
+      ],
+      "id": "8b59774d-c629-4844-9aa4-f20ab3828102",
+      "name": "notify the team",
+      "webhookId": "4b195ba6-12c8-4356-b33d-820f9ace6238",
+      "credentials": {
+        "slackApi": {
+          "id": "BW0fXrFTw797g71Q",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0AEZQ4R2HH",
+          "mode": "list",
+          "cachedResultName": "customer-support"
+        },
+        "text": "=Hi Team,\n\nPlease review the following inbox item under the category: *Customer Support*\n\n*Sender*: {{ $('Classify agent').item.json.from.value[0].address }}\n\n*Email Subject*: {{ $('Classify agent').item.json.headers.subject }}\n\n*Summary*: \n-*Main Purpose* :\n{{ $json.output['Main Purpose'].map(item => `- ${item}`).join('\\n') }}\n\n-*Key Points* :\n{{ $json.output['Key Points'].map(item => `- ${item}`).join('\\n') }}\n\n-*Action Required* :\n{{ $json.output['Action Required'].map(item => `- ${item}`).join('\\n') }}\n\n-*Deadline* :\n{{ $json.output['Deadline'].map(item => `- ${item}`).join('\\n') }}\n\n\n*Kindly prioritize accordingly and update the status once handled.*",
+        "otherOptions": {
+          "includeLinkToWorkflow": false,
+          "mrkdwn": true
+        }
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        1216,
+        0
+      ],
+      "id": "d66689f1-be5d-4624-bf54-54c7ffb21804",
+      "name": "notify the team1",
+      "webhookId": "4b195ba6-12c8-4356-b33d-820f9ace6238",
+      "credentials": {
+        "slackApi": {
+          "id": "BW0fXrFTw797g71Q",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Classify agent').item.json.from.value[0].address }}",
+        "subject": "=Thank you for your message",
+        "emailType": "text",
+        "message": "=Hi {{ $('Classify agent').item.json.from.value[0].name.charAt(0).toUpperCase() + $('Classify agent').item.json.from.value[0].name.slice(1) }},\n\nThank you for your message. Our team is currently reviewing your request and will reach out to you shortly with further details. We appreciate your patience.\n\nBest regards, [Your Name]",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1568,
+        0
+      ],
+      "id": "75374924-8666-4234-b042-03ad62999b7e",
+      "name": "response the sender1",
+      "webhookId": "56024c8c-3e57-435c-9645-0591dc1defdb",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "zXHKDdbtbTxEDHnR",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 10
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1392,
+        0
+      ],
+      "id": "efdb6503-aa47-4a93-ac0e-0b46ba6b3194",
+      "name": "delay",
+      "webhookId": "4d66866d-b184-4c99-8e34-ea5e79b6157a"
+    },
+    {
+      "parameters": {
+        "amount": 10
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1632,
+        -576
+      ],
+      "id": "427606cb-085d-4a3a-a415-3177b16a892f",
+      "name": "delay1",
+      "webhookId": "7d436268-5451-47cc-a342-7909b21292bb"
+    },
+    {
+      "parameters": {
+        "amount": 10
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1632,
+        -400
+      ],
+      "id": "204f3ba8-588a-4ee9-b230-1f60a67d7701",
+      "name": "delay2",
+      "webhookId": "4d66866d-b184-4c99-8e34-ea5e79b6157a"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Classify agent').item.json.text }}",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=ROLE:\nYou are an email summarization engine.\n\nOBJECTIVE:\nSummarize the email into essential information only.\n\nINSTRUCTIONS:\n- Be concise.\n- No repetition.\n- No assumptions.\n- Bullet points only.\n- Max 80 words.\n\nOUTPUT FORMAT:\n\nMain Purpose:\n- \n\nKey Points:\n- \n\nAction Required:\n- \n\nDeadline:\n- (Write \"Not specified\" if none)"
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        864,
+        -208
+      ],
+      "id": "92fb571e-0c39-4699-9022-b6b0cc98ec5f",
+      "name": "summarize2"
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $json.id }}",
+        "labelIds": [
+          "SPAM"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        640,
+        576
+      ],
+      "id": "734b53df-793d-4294-bd25-bf7ee99666b9",
+      "name": "labeling6",
+      "webhookId": "ca894970-3b2a-4931-981d-35321b974315",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "zXHKDdbtbTxEDHnR",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "simple": false,
+        "filters": {
+          "includeSpamTrash": true,
+          "readStatus": "unread"
+        },
+        "options": {
+          "dataPropertyAttachmentsPrefixName": "attachment_",
+          "downloadAttachments": true
+        }
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -144,
+        -48
+      ],
+      "id": "8e0b7455-0766-472f-8e3d-6e626d58b95f",
+      "name": "Gmail Trigger",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "zXHKDdbtbTxEDHnR",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "google/gemini-2.5-flash-lite",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        112,
+        432
+      ],
+      "id": "1ab17bcd-17fa-43ca-a531-3262b67998b1",
+      "name": "OpenRouter Chat Model",
+      "credentials": {
+        "openRouterApi": {
+          "id": "jul41jxGXDMCVZqH",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"summary\": [\n    \"Bullet point 1\",\n    \"Bullet point 2\",\n    \"Bullet point 3\"\n  ],\n  \"suggested_reply\": {\n    \"subject\": \"Professional subject line\",\n    \"body\": \"Professional email body text here.\"\n  }\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1120,
+        -464
+      ],
+      "id": "71cf8dde-2b25-4e02-85d8-90fcf7503c95",
+      "name": "output"
+    },
+    {
+      "parameters": {
+        "content": "## 📬 Gmail AI Inbox Automation\n\n**What this workflow does:**\n- Polls Gmail every minute for new unread emails\n- AI classifies each email into 1 of 7 categories:\n  Revenue · Lead · Operation · Customer Support · Admin · Community · Spam\n- Applies the correct Gmail label automatically\n- Sends a structured summary to the matching Slack channel\n- For **Revenue** and **Lead**: drafts an AI reply + sends a courtesy email\n\n\n## Services used:** Gmail · Slack · OpenRouter (Gemini 2.5 Flash Lite)\n\n\n---\n7 Email Categories**\n---\nClassification Priority Order\n🔴\nRevenue\n— Brand deals, paid collabs\n🟠\nLead\n— Podcast, speaking, proposals\n🟡\nAdmin\n— Contracts, invoices, NDAs\n🔵\nCustomer Support\n— Refunds, complaints\n⚪\nOperation\n— Tools, platforms, team\n🟣\nCommunity\n— Fan mail, feedback\n🗑️\nSpam\n— Cold pitch, mass outreach\n\n📄 **Full setup guide & configuration details:**\n👉 https://docs.google.com/document/d/1irn8-G4-akCc-P14z0f1HkaC0l9yucRVLxlOrdVyLr0/edit?tab=t.0]",
+        "height": 844,
+        "width": 780,
+        "color": 4
+      },
+      "id": "3b69a2ad-574d-40b9-9c66-7a4e700985cb",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -448,
+        -1040
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Create a draft": {
+      "main": [
+        [
+          {
+            "node": "delay1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a draft1": {
+      "main": [
+        [
+          {
+            "node": "delay2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "output1": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "summarize2",
+            "type": "ai_outputParser",
+            "index": 0
+          },
+          {
+            "node": "summarize",
+            "type": "ai_outputParser",
+            "index": 0
+          },
+          {
+            "node": "summarize1",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Classify agent": {
+      "main": [
+        [
+          {
+            "node": "labeling",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "labeling1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "labeling2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "labeling3",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "labeling4",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "labeling5",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "labeling6",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "labeling": {
+      "main": [
+        [
+          {
+            "node": "Summarize & Response Suggestion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summarize & Response Suggestion": {
+      "main": [
+        [
+          {
+            "node": "Notify the team",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify the team": {
+      "main": [
+        [
+          {
+            "node": "Create a draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "labeling1": {
+      "main": [
+        [
+          {
+            "node": "Summarize & Response Suggestion1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summarize & Response Suggestion1": {
+      "main": [
+        [
+          {
+            "node": "Notify the team1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify the team1": {
+      "main": [
+        [
+          {
+            "node": "Create a draft1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "labeling2": {
+      "main": [
+        [
+          {
+            "node": "summarize2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "labeling3": {
+      "main": [
+        [
+          {
+            "node": "summarize",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "labeling4": {
+      "main": [
+        [
+          {
+            "node": "summarize1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "summarize": {
+      "main": [
+        [
+          {
+            "node": "notify the team1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "summarize1": {
+      "main": [
+        [
+          {
+            "node": "notify the team",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "notify the team1": {
+      "main": [
+        [
+          {
+            "node": "delay",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "delay": {
+      "main": [
+        [
+          {
+            "node": "response the sender1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "delay1": {
+      "main": [
+        [
+          {
+            "node": "reply the sender",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "delay2": {
+      "main": [
+        [
+          {
+            "node": "response the sender",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "summarize2": {
+      "main": [
+        [
+          {
+            "node": "Notify the team2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "Classify agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Classify agent",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Summarize & Response Suggestion",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Summarize & Response Suggestion1",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "summarize2",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "summarize",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "summarize1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "output": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Summarize & Response Suggestion",
+            "type": "ai_outputParser",
+            "index": 0
+          },
+          {
+            "node": "Summarize & Response Suggestion1",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "a2487804-f604-4f91-a91d-bb24ca61766e",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "78635082a08c3d51b3528d1dfe241d70c1cc068ff756402dbb4175a615ab167c"
+  },
+  "id": "I5V0vU6Ldo7Pv2GHw3kr2",
+  "tags": []
+}
